@@ -39,8 +39,10 @@
 		"type-check": "vue-tsc --noEmit",
 		"lint": "eslint . --ext .vue,.js,.ts --fix --ignore-path .gitignore",
 		"lint-staged": {
-		    "*.{vue,ts,js}": ["eslint --fix"]
-		  }
+			"*.{vue,ts,js}": [
+				"eslint --fix"
+			]
+		}
 	},
 	"dependencies": {
 		"@dcloudio/uni-app": "3.0.0-3081220230817001",
@@ -69,6 +71,8 @@
 		"@dcloudio/uni-stacktracey": "3.0.0-3081220230817001",
 		"@dcloudio/vite-plugin-uni": "3.0.0-3081220230817001",
 		"@rushstack/eslint-patch": "^1.6.0",
+		"@types/html5plus": "^1.0.5",
+		"@types/uni-app": "^1.4.8",
 		"@vue/eslint-config-prettier": "^8.0.0",
 		"@vue/eslint-config-typescript": "^12.0.0",
 		"@vue/runtime-core": "^3.2.45",
