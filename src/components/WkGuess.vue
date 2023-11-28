@@ -6,13 +6,14 @@
 
 	// 分页参数
 	const pageParams : Required<PageParams> = {
-		page: 30,
+		page: import.meta.env ? 30 : 1,
 		pageSize: 10
 	}
 	// 定义猜你喜欢列表
 	const guessList = ref<GuessItem[]>([])
 	// 已经结束标记
 	const finish = ref(false)
+
 	// 获取猜你喜欢数据集合
 	const getHomeGoodsGuessLikeList = async () => {
 		// 退出分页

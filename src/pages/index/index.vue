@@ -8,6 +8,7 @@
 	import { onLoad } from '@dcloudio/uni-app';
 	import type { BannerItem, CategoryItem, HotItem } from '@/types/home';
 	import type { WkGuessInstance } from "@/types/components";
+	import PageSkeleton from "./components/PageSkeleton.vue"
 
 	// 定义 bannerList 变量,指定类型 BannerItem[]
 	const bannerList = ref<BannerItem[]>([])
@@ -56,33 +57,48 @@
 		// 重置猜你喜欢组件的数据
 		guessRef.value?.resetData()
 		// 加载数据
-		await Promise.all([getHomeBannerList(), getHomeCategoryList(), getHotList()])
+		await Promise.all([getHomeBannerList(), getHomeCategoryList(), getHotList(), guessRef.value?.getMore()])
 		isTriggered.value = false
 	}
 	// --------分割线----------
 	// --------分割线----------
 	// --------分割线----------
+	// 加载中标记
+	const onLoading = ref(false)
 	// 初次加载页面时 ： import { onLoad } from '@dcloudio/uni-app';
-	onLoad(() => {
-		getHomeBannerList()
-		getHomeCategoryList()
-		getHotList()
+	onLoad(async () => {
+		onLoading.value = true
+		await Promise.all([
+			getHomeBannerList(),
+			getHomeCategoryList(),
+			getHotList()
+		])
+
+		onLoading.value = false
 	})
+
+	// 骨架屏控制变量
+	const showSkeleton = false
 </script>
 
 <template>
 	<!-- 自定义导航 -->
 	<CustomNavbar />
 	<!--  滚动容器-->
-	<scroll-view @scrolltolower="onScrollToLower" class="scroll-view" scroll-y="true">
-		<!-- 轮播图 -->
-		<WkSwiper :list=bannerList />
-		<!-- 首页-分类 -->
-		<CategoryPanel :list=HomeCategoryList />
-		<!-- 首页-热门推荐 -->
-		<HotPanel :list=hotList />
-		<!-- 首页-猜你喜欢-->
-		<WkGuess ref="guessRef" />
+	<scroll-view @scrolltolower="onScrollToLower" class="scroll-view" scroll-y="true" refresher-enabled="true"
+		@refresherrefresh="onRefresherrefresh" :refresher-triggered="isTriggered">
+		<PageSkeleton v-if="onLoading" />
+		<template v-else>
+			<!-- 轮播图 -->
+			<WkSwiper :list=bannerList />
+			<!-- 首页-分类 -->
+			<CategoryPanel :list=HomeCategoryList />
+			<!-- 首页-热门推荐 -->
+			<HotPanel :list=hotList />
+			<!-- 首页-猜你喜欢-->
+			<WkGuess ref="guessRef" />
+		</template>
+
 	</scroll-view>
 </template>
 
