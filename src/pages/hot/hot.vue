@@ -66,7 +66,7 @@
 			finish.value = true
 			return uni.showToast({
 				icon: "none",
-				title: "无数据加载。。。"
+				title: "无更多数据"
 			})
 		}
 		curSubType.goodsItems.page++
