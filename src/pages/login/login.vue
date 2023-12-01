@@ -1,22 +1,68 @@
-// src/pages/login/login.vue
-
 <script setup lang="ts">
-	//
+	import { postLoginWxMinAPI, postLoginWxMinSimpleAPI } from '@/services/login';
+	import { onLoad } from '@dcloudio/uni-app'
+	import { useMemberStore } from '@/stores'
+	import type { LoginResult } from '@/types/member';
+
+	// 获取 code 微信登录凭证
+	let code = ''
+	onLoad(async () => {
+		const res = await wx.login()
+		code = res.code
+	})
+	// 获得用户手机号(非个人开发者)
+	const onGetphonenumber = async (e : any) => {
+		console.log("onGetphonenumber --> e:", e)
+		// call api
+		const res = await postLoginWxMinAPI({
+			code: code,
+			encryptedData: e.detail.encryptedData,
+			iv: e.detail.iv
+		})
+		console.log("onGetphonenumber-》", res)
+		loginSuccess(res.result)
+	}
+
+	// 获得用户手机号(内测版)
+	const onGetLoginWxMinSimple = async () => {
+		const phoneNumber = "13123456789"
+		const res = await postLoginWxMinSimpleAPI(phoneNumber)
+		console.log("onGetLoginWxMinSimple-->res", res)
+		// call store ,save res.result data
+		loginSuccess(res.result)
+
+	}
+
+	const loginSuccess = (userInfo : LoginResult) => {
+		const memberStore = useMemberStore()
+		memberStore.setProfile(userInfo)
+
+		uni.showToast({
+			icon: "success",
+			title: "long success"
+		})
+		// 跳转到 tabBar 页面，并关闭其他所有非 tabBar 页面
+		setTimeout(() => {
+			uni.switchTab({
+				url: '/pages/my/my'
+			})
+		}, 500)
+	}
 </script>
 
 <template>
 	<view class="viewport">
 		<view class="logo">
-			<image src="https://pcapi-xiaotuxian-front-devtest.itheima.net/miniapp/images/logo_icon.png"></image>
+			<image mode="aspectFit" src="@/static/login_wukong_logo3.png"></image>
 		</view>
 		<view class="login">
-			<!-- 网页端表单登录 -->
+			<!-- H5 网页端表单登录 -->
 			<!-- <input class="input" type="text" placeholder="请输入用户名/手机号码" /> -->
 			<!-- <input class="input" type="text" password placeholder="请输入密码" /> -->
 			<!-- <button class="button phone">登录</button> -->
 
 			<!-- 小程序端授权登录 -->
-			<button class="button phone">
+			<button class="button phone" open-type="getPhoneNumber" @getphonenumber="onGetphonenumber">
 				<text class="icon icon-phone"></text>
 				手机号快捷登录
 			</button>
@@ -26,12 +72,12 @@
 				</view>
 				<view class="options">
 					<!-- 通用模拟登录 -->
-					<button>
+					<button @tap="onGetLoginWxMinSimple">
 						<text class="icon icon-phone">模拟快捷登录</text>
 					</button>
 				</view>
 			</view>
-			<view class="tips">登录/注册即视为你同意《服务条款》和《小兔鲜儿隐私协议》</view>
+			<view class="tips">登录/注册即视为你同意《服务条款》和《悟空商城隐私协议》</view>
 		</view>
 	</view>
 </template>

@@ -47,22 +47,43 @@
 			}
 		},
 		{
-			"path" : "pages/goods/goods",
-			"style" : 
-			{
-				"navigationBarTitleText" : "商品详情页",
-				"enablePullDownRefresh" : false
+			"path": "pages/goods/goods",
+			"style": {
+				"navigationBarTitleText": "商品详情页",
+				"enablePullDownRefresh": false
 			}
 		},
 		{
-			"path" : "pages/login/login",
-			"style" : 
-			{
-				"navigationBarTitleText" : "登录",
-				"enablePullDownRefresh" : false
+			"path": "pages/login/login",
+			"style": {
+				"navigationBarTitleText": "登录",
+				"enablePullDownRefresh": false
 			}
 		}
 	],
+	"subPackages": [{
+		"root": "pagesMember",
+		"pages": [{
+				"path": "profile/profile",
+				"style": {
+					"navigationBarTitleText": "个人信息"
+				}
+			},
+			{
+				"path": "settings/settings",
+				"style": {
+					"navigationBarTitleText": "设置"
+				}
+			}
+		]
+
+	}],
+	"preloadRule": {
+		"pages/my/my": {
+			"network": "all",
+			"packages": ["pagesMember"]
+		}
+	},
 	"globalStyle": {
 		"navigationBarTextStyle": "black",
 		"navigationBarTitleText": "uni-app",
