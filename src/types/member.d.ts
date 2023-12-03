@@ -1,5 +1,4 @@
-/** 小程序登录 登录用户信息 */
-export type LoginResult = {
+type baseProfile = {
 	/** 用户ID */
 	id : number
 	/** 头像  */
@@ -8,6 +7,11 @@ export type LoginResult = {
 	account : string
 	/** 昵称 */
 	nickname ?: string
+}
+
+/** 小程序登录 登录用户信息 */
+export type LoginResult = baseProfile & {
+
 	/** 手机号 */
 	mobile : string
 	/** 登录凭证 */
@@ -15,15 +19,7 @@ export type LoginResult = {
 }
 
 /** 个人信息 用户详情信息 */
-export type ProfileDetail = {
-	/** 用户ID */
-	id : number
-	/** 头像  */
-	avatar : string
-	/** 账户名  */
-	account : string
-	/** 昵称 */
-	nickname ?: string
+export type ProfileDetail = baseProfile & {
 	/** 性别 */
 	gender ?: Gender
 	/** 生日 */
@@ -36,3 +32,18 @@ export type ProfileDetail = {
 
 /** 性别 */
 export type Gender = '女' | '男'
+
+
+/** 个人信息 修改请求体参数  */
+export type ProfileParams = Pick<ProfileDetail,
+	// 从ProfileDetail中挑出如下参数
+	'nickname' | 'gender' | 'birthday' | 'profession'
+> & {
+	/** 省份编码*/
+	provinceCode ?: string,
+	// 城市编码
+	cityCode ?: string,
+	// 区县编码
+	countyCode ?: string
+
+}

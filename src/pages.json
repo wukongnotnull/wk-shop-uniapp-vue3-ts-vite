@@ -61,11 +61,13 @@
 			}
 		}
 	],
+	// 分包加载配置 
 	"subPackages": [{
 		"root": "pagesMember",
 		"pages": [{
 				"path": "profile/profile",
 				"style": {
+					"navigationStyle": "custom",
 					"navigationBarTitleText": "个人信息"
 				}
 			},
@@ -74,10 +76,27 @@
 				"style": {
 					"navigationBarTitleText": "设置"
 				}
+			},
+			{
+				"path" : "address/address",
+				"style" : 
+				{
+					"navigationBarTitleText" : "地址列表",
+					"enablePullDownRefresh" : false
+				}
+			},
+			{
+				"path" : "address-form/address-form",
+				"style" : 
+				{
+					"navigationBarTitleText" : "地址表单",
+					"enablePullDownRefresh" : false
+				}
 			}
 		]
 
 	}],
+	//声明分包预下载的规则
 	"preloadRule": {
 		"pages/my/my": {
 			"network": "all",
@@ -109,6 +128,7 @@
 				"iconPath": "static/tabs/cart_default.png",
 				"selectedIconPath": "static/tabs/cart_selected.png"
 			},
+
 			{
 				"text": "我",
 				"pagePath": "pages/my/my",
