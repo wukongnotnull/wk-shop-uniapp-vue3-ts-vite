@@ -62,40 +62,71 @@
 		}
 	],
 	// 分包加载配置 
-	"subPackages": [{
-		"root": "pagesMember",
-		"pages": [{
-				"path": "profile/profile",
-				"style": {
-					"navigationStyle": "custom",
-					"navigationBarTitleText": "个人信息"
-				}
-			},
-			{
-				"path": "settings/settings",
-				"style": {
-					"navigationBarTitleText": "设置"
-				}
-			},
-			{
-				"path" : "address/address",
-				"style" : 
+	"subPackages": [
+		// 会员相关的分包
+		{
+			"root": "pagesMember",
+			"pages": [{
+					"path": "profile/profile",
+					"style": {
+						"navigationStyle": "custom",
+						"navigationBarTitleText": "个人信息"
+					}
+				},
 				{
-					"navigationBarTitleText" : "地址列表",
-					"enablePullDownRefresh" : false
-				}
-			},
-			{
-				"path" : "address-form/address-form",
-				"style" : 
+					"path": "settings/settings",
+					"style": {
+						"navigationBarTitleText": "设置"
+					}
+				},
 				{
-					"navigationBarTitleText" : "地址表单",
-					"enablePullDownRefresh" : false
+					"path": "address/address",
+					"style": {
+						"navigationBarTitleText": "地址列表",
+						"enablePullDownRefresh": false
+					}
+				},
+				{
+					"path": "address-form/address-form",
+					"style": {
+						"navigationBarTitleText": "地址表单",
+						"enablePullDownRefresh": false
+					}
 				}
-			}
-		]
+			]
 
-	}],
+		},
+		// 订单相关的分包
+		{
+			"root": "pagesOrder",
+			"pages": [{
+					"path": "create/create",
+					"style": {
+						"navigationBarTitleText": "填写订单"
+					}
+				},
+				{
+					"path": "detail/detail",
+					"style": {
+						"navigationBarTitleText": "订单详情",
+						"navigationStyle": "custom"
+					}
+				},
+				{
+					"path": "payment/payment",
+					"style": {
+						"navigationBarTitleText": "支付结果"
+					}
+				},
+				{
+					"path": "list/list",
+					"style": {
+						"navigationBarTitleText": "订单列表"
+					}
+				}
+			]
+		}
+	],
 	//声明分包预下载的规则
 	"preloadRule": {
 		"pages/my/my": {

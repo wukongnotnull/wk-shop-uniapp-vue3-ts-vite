@@ -25,7 +25,7 @@
 
 	// 获得用户手机号(内测版)
 	const onGetLoginWxMinSimple = async () => {
-		const phoneNumber = "13123456789"
+		const phoneNumber = "15312088395"
 		const res = await postLoginWxMinSimpleAPI(phoneNumber)
 		console.log("onGetLoginWxMinSimple-->res", res)
 		// call store ,save res.result data

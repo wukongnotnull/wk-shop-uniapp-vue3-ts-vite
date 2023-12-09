@@ -1,14 +1,474 @@
-<template>
-  <view> </view>
-</template>
+<script setup lang="ts">
+	import { useGuessList } from '@/composables';
+	import { deleteMemberCartAPI, getMemberCartAPI, putMemberCartAllSelectedAPi, putMemberCartBySkuIdAPI } from '@/services/cart';
+	import { useMemberStore } from '@/stores';
+	import type { CartItem } from '@/types/cart';
+	import { onShow } from '@dcloudio/uni-app';
+	import { ref, computed } from 'vue';
 
-<script>
-export default {
-  data() {
-    return {}
-  },
-  methods: {},
-}
+	// 获得存储在store中的用户信息
+	const memberStore = useMemberStore()
+	// 从后端api获得购物车列表
+	const cart = ref<CartItem[]>([])
+	const getMemberCart = async () => {
+		const res = await getMemberCartAPI()
+		console.log('getMemberCart--> res:', res)
+		cart.value = res.result
+
+	}
+	// 删除购物车中的单品
+	const deleteMemberCart = (id : string) => {
+		uni.showModal({
+			content: '确认删除吗？',
+			success: async (value) => {
+				if (value.confirm) {
+					const res = await deleteMemberCartAPI({
+						ids: [id]
+					})
+					console.log("deleteMemberCart--> res:", res);
+					getMemberCart()
+				}
+			}
+		})
+	}
+	// 每次页面显示调用 onShow（）生命函数
+	onShow(() => {
+		// 只有登录状态下
+		if (memberStore.profile) {
+			getMemberCart()
+		}
+	})
+
+	// 添加猜你喜欢组件,实现触底更新加载
+	const {
+		guessRef, onScrolltolower
+	} = useGuessList()
+
+	// 触发进步器，调用该函数
+	const onChangeCount = async (event : any) => {
+		// event: {value: 8, index: "300477221"}
+		console.log("onChangeCount-->event:", event);
+		const res = await putMemberCartBySkuIdAPI(event.index, { count: event.value })
+		console.log("onChangeCount-->res:", res);
+	}
+
+	// 按每条记录，点击选中按钮
+	const onSelectedChange = async (item : CartItem) => {
+		item.selected = !item.selected
+		// 修改后端数据库中单品选中状态
+		const res = await putMemberCartBySkuIdAPI(item.skuId, { selected: item.selected })
+		console.log("onSelectedChange-->res:", res);
+	}
+	// 全选：根据每条记录计算得出是否被全选
+	const isAllSelected = computed(() => {
+		// 数组.every() 方法用于检测数组所有元素是否都符合指定条件（通过函数提供）。
+		//每个元素全满足指定条件，即为true，最终结果才为全，否则返回 false
+		return cart.value.length && cart.value.every((item) => item.selected)
+	})
+
+	const onAllSelectedChange = () => {
+		// 若isAllSelected为true，点击后则每项都要改成false
+		const _isAllSelected = !isAllSelected.value
+		// 更新前端单选框状态
+		cart.value.forEach((item) => {
+			if (item.selected !== _isAllSelected) {
+				item.selected = _isAllSelected
+			}
+		})
+		// 更新后端数据
+		putMemberCartAllSelectedAPi({ selected: _isAllSelected })
+	}
+	// 被选中的单品列表
+	// cart 是响应式的 -> selectedSkuList 响应式 ->totalPrice响应式->totalNum响应式
+	const selectedSkuList = computed(() => {
+		return cart.value.filter((item) => item.selected)
+	})
+	// 计算总价
+	const totalPrice = computed(() => {
+		return selectedSkuList.value.reduce((sum, item) => sum + item.nowPrice * item.count, 0)
+	})
+	// 计算总数量
+	const totalNum = computed(() => {
+		return selectedSkuList.value.reduce((sum, item) => sum + item.count, 0)
+	})
+
+	// 结算按钮
+	const gotoPayment = () => {
+		if (totalNum.value === 0) {
+			return uni.showToast({
+				icon: 'none',
+				title: '请选择商品',
+			})
+		}
+		// 跳转到填写订单页
+		uni.navigateTo({ url: '/pagesOrder/create/create' })
+	}
 </script>
 
-<style></style>
+<template>
+	<scroll-view scroll-y class="scroll-view" @scrolltolower="onScrolltolower">
+		<!-- 已登录: 显示购物车 -->
+		<template v-if="memberStore.profile">
+			<!-- 购物车列表非空状态 -->
+			<view class="cart-list" v-if="cart.length">
+				<!-- 优惠提示 -->
+				<view class="tips">
+					<text class="label">满减</text>
+					<text class="desc">满1件, 即可享受9折优惠</text>
+				</view>
+				<!-- 滑动操作分区 -->
+				<uni-swipe-action>
+					<!-- 滑动操作项 -->
+					<uni-swipe-action-item v-for="(item,index) in cart" :key="index" class="cart-swipe">
+						<!-- 商品信息 -->
+						<view class="goods">
+							<!-- 选中状态 -->
+							<text @tap="onSelectedChange(item)" class="checkbox" :class="{checked: item.selected}"></text>
+							<navigator :url="`/pages/goods/goods?id=${item.id}`" hover-class="none" class="navigator">
+								<image mode="aspectFill" class="picture" :src="item.picture"></image>
+								<view class="meta">
+									<view class="name ellipsis">{{ item.name}}</view>
+									<view class="attrsText ellipsis">{{item.attrsText}}</view>
+									<view class="price">{{ item.nowPrice}}</view>
+								</view>
+							</navigator>
+							<!-- 商品数量 -->
+							<!-- 使用sku组件中的进步器插件 -->
+							<view class="count">
+								<vk-data-input-number-box v-model="item.count" :min="1" :max="item.stock" :index="item.skuId"
+									@change="onChangeCount" />
+							</view>
+						</view>
+						<!-- 右侧删除按钮 -->
+						<template #right>
+							<view class="cart-swipe-right">
+								<button class="button delete-button" @tap="deleteMemberCart(item.skuId)">删除</button>
+							</view>
+						</template>
+					</uni-swipe-action-item>
+				</uni-swipe-action>
+			</view>
+			<!-- 购物车空状态 -->
+			<view class="cart-blank" v-else>
+				<image src="/static/images/blank_cart.png" class="image" />
+				<text class="text">购物车还是空的，快来挑选好货吧</text>
+				<navigator open-type="switchTab" url="/pages/index/index" hover-class="none">
+					<button class="button">去首页看看</button>
+				</navigator>
+			</view>
+			<!-- 吸底工具栏 -->
+			<view class="toolbar">
+				<text @tap="onAllSelectedChange" class="all" :class="{ checked: isAllSelected }">全选</text>
+				<text class="amount">{{totalPrice}}</text>
+				<view class="button-grounp">
+					<view @tap="gotoPayment" class="button payment-button" :class="{ disabled: true }"> 去结算({{totalNum}}) </view>
+				</view>
+			</view>
+		</template>
+		<!-- 未登录: 提示登录 -->
+		<view class="login-blank" v-else>
+			<text class="text">登录后可查看购物车中的商品</text>
+			<navigator url="/pages/login/login" hover-class="none">
+				<button class="button">去登录</button>
+			</navigator>
+		</view>
+		<!-- 猜你喜欢 -->
+		<WkGuess ref="guessRef" />
+		<!-- 底部占位空盒子 -->
+		<view class="toolbar-height"></view>
+	</scroll-view>
+</template>
+
+<style lang="scss">
+	// 根元素
+	:host {
+		height: 100vh;
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
+		background-color: #f7f7f8;
+	}
+
+	// 滚动容器
+	.scroll-view {
+		flex: 1;
+	}
+
+	// 购物车列表
+	.cart-list {
+		padding: 0 20rpx;
+
+		// 优惠提示
+		.tips {
+			display: flex;
+			align-items: center;
+			line-height: 1;
+			margin: 30rpx 10rpx;
+			font-size: 26rpx;
+			color: #666;
+
+			.label {
+				color: #fff;
+				padding: 7rpx 15rpx 5rpx;
+				border-radius: 4rpx;
+				font-size: 24rpx;
+				background-color: #27ba9b;
+				margin-right: 10rpx;
+			}
+		}
+
+		// 购物车商品
+		.goods {
+			display: flex;
+			padding: 20rpx 20rpx 20rpx 80rpx;
+			border-radius: 10rpx;
+			background-color: #fff;
+			position: relative;
+
+			.navigator {
+				display: flex;
+			}
+
+			.checkbox {
+				position: absolute;
+				top: 0;
+				left: 0;
+
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				width: 80rpx;
+				height: 100%;
+
+				&::before {
+					content: '\e6cd';
+					font-family: 'erabbit' !important;
+					font-size: 40rpx;
+					color: #444;
+				}
+
+				&.checked::before {
+					content: '\e6cc';
+					color: #27ba9b;
+				}
+			}
+
+			.picture {
+				width: 170rpx;
+				height: 170rpx;
+			}
+
+			.meta {
+				flex: 1;
+				display: flex;
+				flex-direction: column;
+				justify-content: space-between;
+				margin-left: 20rpx;
+			}
+
+			.name {
+				height: 72rpx;
+				font-size: 26rpx;
+				color: #444;
+			}
+
+			.attrsText {
+				line-height: 1.8;
+				padding: 0 15rpx;
+				font-size: 24rpx;
+				align-self: flex-start;
+				border-radius: 4rpx;
+				color: #888;
+				background-color: #f7f7f8;
+			}
+
+			.price {
+				line-height: 1;
+				font-size: 26rpx;
+				color: #444;
+				margin-bottom: 2rpx;
+				color: #cf4444;
+
+				&::before {
+					content: '￥';
+					font-size: 80%;
+				}
+			}
+
+			// 商品数量
+			.count {
+				position: absolute;
+				bottom: 20rpx;
+				right: 5rpx;
+
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				width: 220rpx;
+				height: 48rpx;
+
+				.text {
+					height: 100%;
+					padding: 0 20rpx;
+					font-size: 32rpx;
+					color: #444;
+				}
+
+				.input {
+					height: 100%;
+					text-align: center;
+					border-radius: 4rpx;
+					font-size: 24rpx;
+					color: #444;
+					background-color: #f6f6f6;
+				}
+			}
+		}
+
+		.cart-swipe {
+			display: block;
+			margin: 20rpx 0;
+		}
+
+		.cart-swipe-right {
+			display: flex;
+			height: 100%;
+
+			.button {
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				width: 50px;
+				padding: 6px;
+				line-height: 1.5;
+				color: #fff;
+				font-size: 26rpx;
+				border-radius: 0;
+			}
+
+			.delete-button {
+				background-color: #cf4444;
+			}
+		}
+	}
+
+	// 空状态
+	.cart-blank,
+	.login-blank {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		flex-direction: column;
+		height: 60vh;
+
+		.image {
+			width: 400rpx;
+			height: 281rpx;
+		}
+
+		.text {
+			color: #444;
+			font-size: 26rpx;
+			margin: 20rpx 0;
+		}
+
+		.button {
+			width: 240rpx !important;
+			height: 60rpx;
+			line-height: 60rpx;
+			margin-top: 20rpx;
+			font-size: 26rpx;
+			border-radius: 60rpx;
+			color: #fff;
+			background-color: #27ba9b;
+		}
+	}
+
+	// 吸底工具栏
+	.toolbar {
+		position: fixed;
+		left: 0;
+		right: 0;
+		bottom: var(--window-bottom);
+		z-index: 1;
+
+		height: 100rpx;
+		padding: 0 20rpx;
+		display: flex;
+		align-items: center;
+		border-top: 1rpx solid #ededed;
+		border-bottom: 1rpx solid #ededed;
+		background-color: #fff;
+		box-sizing: content-box;
+
+		.all {
+			margin-left: 25rpx;
+			font-size: 14px;
+			color: #444;
+			display: flex;
+			align-items: center;
+		}
+
+		.all::before {
+			font-family: 'erabbit' !important;
+			content: '\e6cd';
+			font-size: 40rpx;
+			margin-right: 8rpx;
+		}
+
+		.checked::before {
+			content: '\e6cc';
+			color: #27ba9b;
+		}
+
+		.text {
+			margin-right: 8rpx;
+			margin-left: 32rpx;
+			color: #444;
+			font-size: 14px;
+		}
+
+		.amount {
+			font-size: 20px;
+			color: #cf4444;
+
+			.decimal {
+				font-size: 12px;
+			}
+
+			&::before {
+				content: '￥';
+				font-size: 12px;
+			}
+		}
+
+		.button-grounp {
+			margin-left: auto;
+			display: flex;
+			justify-content: space-between;
+			text-align: center;
+			line-height: 72rpx;
+			font-size: 13px;
+			color: #fff;
+
+			.button {
+				width: 240rpx;
+				margin: 0 10rpx;
+				border-radius: 72rpx;
+			}
+
+			.payment-button {
+				background-color: #27ba9b;
+
+				&.disabled {
+					opacity: 0.6;
+				}
+			}
+		}
+	}
+
+	// 底部占位空盒子
+	.toolbar-height {
+		height: 100rpx;
+	}
+</style>

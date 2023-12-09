@@ -1,0 +1,75 @@
+// spu 某商品的数据格式
+{
+	thumbNail: "http://..",
+	specs: [
+		// 颜色
+		{
+			name: '颜色',
+			values: [{
+					name: '白色',
+					id: '001',
+					image: 'http://'
+				},
+				{
+					name: '黑色',
+					id: '002',
+					image: 'http;//'
+				}
+			]
+		},
+		// 大小
+		{
+			name: '尺码',
+			values: [{
+					name: '39',
+					id: '003',
+					image: null
+				},
+				{
+					name: '40',
+					id: '004',
+					image: null
+				},
+				{
+					name: '41',
+					id: '005',
+					image: null
+				},
+				{
+					name: '42',
+					id: '006',
+					image: null
+				},
+			]
+		}
+	]
+	skus: [{
+			id: '111',
+			price: '200',
+			stocks: 10,
+			specs: [{
+					name: '颜色',
+					value: '白色'
+				},
+				{
+					name: '尺码',
+					value: '39'
+				},
+			]
+		},
+		{
+			id: '112',
+			price: '202',
+			stocks: 11,
+			specs: [{
+					name: '颜色',
+					value: '白色'
+				},
+				{
+					name: '尺码',
+					value: '40'
+				},
+			]
+		}
+	]
+}

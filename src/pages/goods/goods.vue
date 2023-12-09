@@ -1,4 +1,5 @@
 <script setup lang="ts">
+	import { postMemberCartAPI } from '@/services/cart';
 	import { getGoodsByIdAPI } from '@/services/goods';
 	import type { GoodsResult } from '@/types/goods';
 	import { onLoad } from '@dcloudio/uni-app';
@@ -12,19 +13,71 @@
 	}>()
 	// 定义商品详情实例
 	const goodsDetail = ref<GoodsResult>()
+
 	// api 获得数据
 	const getGoodsById = async () => {
 		const res = await getGoodsByIdAPI(query.id)
 		goodsDetail.value = res.result
 		console.log(res)
+		// SKU组件所需格式
+		localdata.value = {
+			_id: res.result.id, // spu id
+			name: res.result.name,  // 商品名称
+			goods_thumb: res.result.mainPictures[0], // 商品首图
+			spec_list: res.result.specs.map((v) => ({ name: v.name, list: v.values })), // 
+			sku_list: res.result.skus.map((v) => ({
+				_id: v.id,
+				goods_id: res.result.id,
+				goods_name: res.result.name,
+				image: v.picture,
+				price: v.price * 100, // 注意：需要乘以 100
+				stock: v.inventory,
+				sku_name_arr: v.specs.map((vv) => vv.valueName),
+			})),
+		}
 	}
 
 	onLoad(() => {
 		getGoodsById()
 	})
+	enum SkuMode {
+		Both = 1, // 显示加入购物车和立即购买
+		Cart = 2,
+		Buy = 3,
+	}
+	// 控制sku组件显示和隐藏
+	const isShowSkuPopup = ref<boolean>(false)
+	// 临时存放 sku组件将要渲染的数据
+	const localdata = ref()
+	// 控制 sku组件的模式：加入购物车模式、立即购买模式、全模式
+	const mode = ref()
+	const openSkuPopup = (value : SkuMode) => {
+		isShowSkuPopup.value = true
+		mode.value = value
+	}
+	// 加入购物车
+	const onAddCart = async (event : any) => {
+		console.log("onAddCart --> event: ", event);
+		const res = await postMemberCartAPI({
+			skuId: event._id,
+			count: event.buy_num
+		})
+		console.log("onAddCart-->res:", res);
+		uni.showToast({
+			icon: "success",
+			title: "添加成功"
+		})
+		isShowSkuPopup.value = false
+	}
+
+	// sku 弹窗 -- 立即购买
+	const onBuyNow = (ev : any) => {
+		uni.navigateTo({ url: `/pagesOrder/create/create?skuId=${ev._id}&count=${ev.buy_num}` })
+	}
 </script>
 
 <template>
+	<!-- 商品详情 -->
 	<scroll-view scroll-y class="viewport">
 		<!-- 基本信息 -->
 		<view class="goods">
@@ -77,7 +130,7 @@
 			<view class="content">
 				<view class="properties">
 					<!-- 属性详情 -->
-					<view class="item" v-for="(item,index) in goodsDetail?.details.properties">
+					<view class="item" v-for="(item,index) in goodsDetail?.details.properties" :key="index">
 						<text class="label">{{ item.name}}</text>
 						<text class="value">{{ item.value}}</text>
 					</view>
@@ -106,7 +159,6 @@
 			</view>
 		</view>
 	</scroll-view>
-
 	<!-- 用户操作 -->
 	<view class="toolbar" :style="{ paddingBottom: safeAreaInsets?.bottom + 'px' }">
 		<view class="icons">
@@ -119,10 +171,13 @@
 			</navigator>
 		</view>
 		<view class="buttons">
-			<view class="addcart"> 加入购物车 </view>
-			<view class="buynow"> 立即购买 </view>
+			<view class="addcart" @tap="openSkuPopup(SkuMode.Cart)"> 加入购物车 </view>
+			<view class="buynow" @tap="openSkuPopup(SkuMode.Buy)"> 立即购买 </view>
 		</view>
 	</view>
+	<!-- sku 弹窗 -->
+	<vk-data-goods-sku-popup @cart="onAddCart" @buy-now="onBuyNow" v-model=" isShowSkuPopup" :localdata="localdata"
+		:mode="mode" add-cart-background-color="#FFA868" buy-now-background-color="#27BA9B" />
 </template>
 
 <style lang="scss">
